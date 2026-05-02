@@ -17,8 +17,11 @@ jest.mock('firebase-admin', () => {
   };
 });
 
+jest.mock('../../src/utils/logger', () => ({
+  warn: jest.fn(),
+}));
+
 const admin      = require('firebase-admin');
-const apiResponse = require('../../src/utils/apiResponse');
 const authenticate = require('../../src/middleware/authenticate');
 
 // Helper to create minimal Express-like req/res/next objects

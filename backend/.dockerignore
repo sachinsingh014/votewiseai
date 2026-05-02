@@ -8,8 +8,7 @@ node_modules/
 .env.*
 
 # Firebase service account — injected at runtime via Workload Identity / Secret Manager
-credentials/
-*.json
+credentials/*.json
 
 # Development tools
 nodemon.json

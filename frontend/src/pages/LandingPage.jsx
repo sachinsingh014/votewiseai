@@ -235,8 +235,8 @@ export default function LandingPage() {
           <nav className="flex flex-wrap justify-center gap-8" aria-label="Footer navigation">
             <a className="text-slate-500 hover:text-orange-400 transition-colors text-sm font-medium" href="#features">Features</a>
             <a className="text-slate-500 hover:text-orange-400 transition-colors text-sm font-medium" href="#about">About</a>
-            <a className="text-slate-500 hover:text-orange-400 transition-colors text-sm font-medium" href="#">Privacy Policy</a>
-            <a className="text-slate-500 hover:text-orange-400 transition-colors text-sm font-medium" href="#">Terms of Service</a>
+            <a className="text-slate-500 hover:text-orange-400 transition-colors text-sm font-medium" href="/privacy">Privacy Policy</a>
+            <a className="text-slate-500 hover:text-orange-400 transition-colors text-sm font-medium" href="/terms">Terms of Service</a>
           </nav>
         </div>
       </footer>

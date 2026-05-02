@@ -145,3 +145,67 @@ describe('ai.service — generateResponse', () => {
     expect(result.fallback).toBe(true);
   });
 });
+
+describe('ai.service — streamGemini', () => {
+  const { streamGemini } = require('../../src/services/ai/ai.service');
+  
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('handles stream correctly', async () => {
+    // Mock response stream
+    const mockReader = {
+      read: jest.fn()
+        .mockResolvedValueOnce({ done: false, value: new TextEncoder().encode('[{"candidates": [{"content": {"parts": [{"text": "Hello stream"}]}}]}]') })
+        .mockResolvedValueOnce({ done: true }),
+      cancel: jest.fn(),
+    };
+    
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      body: { getReader: () => mockReader },
+    });
+
+    const { GoogleAuth } = require('google-auth-library');
+    GoogleAuth.mockImplementation(() => ({
+      getAccessToken: jest.fn().mockResolvedValue('fake-token'),
+    }));
+
+    const mockRes = {
+      setHeader: jest.fn(),
+      flushHeaders: jest.fn(),
+      write: jest.fn(),
+      end: jest.fn(),
+      on: jest.fn(),
+      writableEnded: false,
+    };
+
+    moderateOutput.mockReturnValue({ safe: true, text: 'Hello stream', flagged: false });
+
+    await streamGemini(mockEnv, mockPrompt, 'chat', mockRes, { signal: null }, 'req-123');
+
+    expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/event-stream');
+    expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('Hello stream'));
+    expect(mockRes.end).toHaveBeenCalled();
+  });
+
+  it('handles stream upstream error', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: jest.fn().mockResolvedValue({ error: { message: 'Stream failed' } }),
+    });
+
+    const mockRes = {
+      setHeader: jest.fn(),
+      flushHeaders: jest.fn(),
+      write: jest.fn(),
+      end: jest.fn(),
+      on: jest.fn(),
+      writableEnded: false,
+    };
+
+    await expect(streamGemini(mockEnv, mockPrompt, 'chat', mockRes, { signal: null }, 'req-123')).rejects.toThrow('Stream failed');
+  });
+});

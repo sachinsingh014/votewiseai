@@ -14,10 +14,17 @@ const initFirebase = (env) => {
     return admin.firestore();
   }
 
-  admin.initializeApp({
-    credential: admin.credential.cert(env.GOOGLE_APPLICATION_CREDENTIALS),
+  const config = {
     projectId: env.FIREBASE_PROJECT_ID,
-  });
+  };
+
+  if (env.GOOGLE_APPLICATION_CREDENTIALS) {
+    config.credential = admin.credential.cert(env.GOOGLE_APPLICATION_CREDENTIALS);
+  } else {
+    config.credential = admin.credential.applicationDefault();
+  }
+
+  admin.initializeApp(config);
 
   db = admin.firestore();
   logger.info('Firebase Admin SDK initialized');

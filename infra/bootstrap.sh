@@ -36,10 +36,12 @@ gcloud artifacts repositories create "$REPO_NAME" \
   --project="$PROJECT_ID" 2>/dev/null || echo "  (Already exists)"
 
 # Set lifecycle policy — keep 10 most recent images (Fixes #14)
+echo '[{"name":"keep-10-latest","action":{"type":"Keep"},"mostRecentVersions":{"keepCount":10}}]' > policy.json
 gcloud artifacts repositories set-cleanup-policies "$REPO_NAME" \
   --location="$REGION" \
   --project="$PROJECT_ID" \
-  --policy='[{"name":"keep-10-latest","action":{"type":"Keep"},"mostRecentVersions":{"keepCount":10}}]'
+  --policy=policy.json
+rm policy.json
 
 # ── 3. Create dedicated least-privilege Service Account (Fixes #8) ────────────
 echo "✅ Creating Service Account: $SA_NAME..."
@@ -75,25 +77,18 @@ echo "🔐 Creating Secret Manager secrets..."
 echo "  (You will be prompted to enter values for each secret)"
 echo ""
 
-read -r -s -p "Enter GEMINI_API_KEY: " GEMINI_KEY
-echo ""
-printf '%s' "$GEMINI_KEY" | gcloud secrets create gemini-api-key \
-  --data-file=- \
-  --project="$PROJECT_ID" 2>/dev/null || \
-  printf '%s' "$GEMINI_KEY" | gcloud secrets versions add gemini-api-key --data-file=-
-
-read -r -p "Enter ALLOWED_ORIGINS (comma-separated): " ORIGINS
+# No GEMINI_API_KEY needed — we use Vertex AI with ADC (Service Account on Cloud Run)
+ORIGINS="https://${PROJECT_ID}.web.app,https://${PROJECT_ID}.firebaseapp.com"
 printf '%s' "$ORIGINS" | gcloud secrets create allowed-origins \
   --data-file=- \
   --project="$PROJECT_ID" 2>/dev/null || \
-  printf '%s' "$ORIGINS" | gcloud secrets versions add allowed-origins --data-file=-
+  printf '%s' "$ORIGINS" | gcloud secrets versions add allowed-origins \
+    --data-file=- \
+    --project="$PROJECT_ID"
 
-# Grant the SA permission to read these specific secrets
-gcloud secrets add-iam-policy-binding gemini-api-key \
-  --member="serviceAccount:$SA_EMAIL" \
-  --role="roles/secretmanager.secretAccessor" \
-  --project="$PROJECT_ID"
+echo "  ✅ allowed-origins secret set to: $ORIGINS"
 
+# Grant the SA permission to read this secret
 gcloud secrets add-iam-policy-binding allowed-origins \
   --member="serviceAccount:$SA_EMAIL" \
   --role="roles/secretmanager.secretAccessor" \
@@ -131,18 +126,8 @@ gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
 
 # ── 6. Set up GCP Budget Alert to prevent cost overruns (Fixes #15) ──────────
 echo ""
-echo "✅ Creating billing budget alert ($50/month)..."
-# NOTE: Budget API requires billing account ID. Update BILLING_ACCOUNT_ID below.
-# Get yours with: gcloud billing accounts list
-BILLING_ACCOUNT_ID="XXXXXX-XXXXXX-XXXXXX"   # <-- UPDATE THIS
-gcloud billing budgets create \
-  --billing-account="$BILLING_ACCOUNT_ID" \
-  --display-name="VoteWise AI Monthly Budget" \
-  --budget-amount=50USD \
-  --threshold-rule=percent=0.5 \
-  --threshold-rule=percent=0.9 \
-  --threshold-rule=percent=1.0 \
-  --project="$PROJECT_ID" 2>/dev/null || echo "  (Budget already exists or requires billing account update)"
+echo "ℹ️  Skipping budget alert — set it manually in GCP Console if needed."
+echo "   (Billing → Budgets & alerts → Create Budget)"
 
 # ── 7. Print GitHub Secrets needed for CI/CD ─────────────────────────────────
 PROVIDER_RESOURCE=$(gcloud iam workload-identity-pools providers describe "github-provider" \

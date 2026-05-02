@@ -43,57 +43,26 @@ const completeStep = async (req, res, next) => {
   try {
     const { stepId } = req.body;
     const uid = req.user.uid;
-
-    const db = getDb();
-    const userRef = db.collection('users').doc(uid);
+    const userRef = getDb().collection('users').doc(uid);
     const docSnap = await userRef.get();
 
-    if (!docSnap.exists) {
-      return apiResponse.notFound(res, 'User roadmap not found. Please visit the dashboard first.');
-    }
+    if (!docSnap.exists) return apiResponse.notFound(res, 'Roadmap not found.');
 
     const { roadmap } = docSnap.data();
+    const targetStep = roadmap.find((s) => s.id === stepId);
 
-    // --- Step ordering enforcement ---
-    // Find the step to complete
-    const targetIndex = roadmap.findIndex((s) => s.id === stepId);
-    if (targetIndex === -1) {
-      return apiResponse.badRequest(res, `Step ${stepId} does not exist.`);
-    }
+    if (!targetStep) return apiResponse.badRequest(res, `Step ${stepId} missing.`);
+    if (targetStep.status === 'completed') return apiResponse.success(res, { roadmap, message: 'Done.' });
+    if (targetStep.status === 'locked') return apiResponse.badRequest(res, 'Step locked.');
 
-    const targetStep = roadmap[targetIndex];
-
-    // Already completed — idempotent, return success
-    if (targetStep.status === 'completed') {
-      return apiResponse.success(res, { roadmap, message: 'Step already completed.' });
-    }
-
-    // Enforce sequential completion — no skipping
-    if (targetStep.status === 'locked') {
-      return apiResponse.badRequest(res, 'Cannot complete a locked step. Complete previous steps first.');
-    }
-
-    // Build updated roadmap
     const updatedRoadmap = roadmap.map((step) => {
-      if (step.id === stepId) {return { ...step, status: 'completed' };}
-      if (step.id === stepId + 1) {return { ...step, status: 'action_required' };}
+      if (step.id === stepId) return { ...step, status: 'completed' };
+      if (step.id === stepId + 1) return { ...step, status: 'action_required' };
       return step;
     });
 
-    // Persist to Firestore via Admin SDK (secure, server-side)
-    await userRef.update({
-      roadmap: updatedRoadmap,
-      lastUpdated: new Date().toISOString(),
-    });
-
-    // Structured audit log
-    logger.info({
-      event: 'step_completed',
-      uid,
-      stepId,
-      stepTitle: targetStep.title,
-      timestamp: new Date().toISOString(),
-    });
+    await userRef.update({ roadmap: updatedRoadmap, lastUpdated: new Date().toISOString() });
+    logger.info({ event: 'step_completed', uid, stepId });
 
     return apiResponse.success(res, { roadmap: updatedRoadmap });
   } catch (err) {

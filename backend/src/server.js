@@ -23,9 +23,18 @@ const createApp = (env) => {
         scriptSrc: ["'self'"],
         styleSrc: ["'self'"],
         imgSrc: ["'self'", 'data:'],
+        upgradeInsecureRequests: [],
       },
     },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    frameguard: { action: 'deny' },
+    xContentTypeOptions: true,
   }));
+  // Add Permissions-Policy (Helmet doesn't support this natively yet in some versions, or we set it manually)
+  app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
+    next();
+  });
 
   // CORS — supports dynamic wildcard/regex (Fixes #4)
   const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map(o => {

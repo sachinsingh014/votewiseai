@@ -4,6 +4,7 @@ const { Router } = require('express');
 const { guide, completeStep, getProgress, guideValidation, progressValidation } = require('../controllers/journey.controller');
 const authenticate = require('../middleware/authenticate');
 const validate = require('../middleware/validate');
+const { userAiLimiter } = require('../middleware/userRateLimiter');
 
 const router = Router();
 
@@ -25,6 +26,6 @@ router.post('/progress', authenticate, progressValidation, validate, completeSte
  * POST /api/journey/guide
  * Generates a personalized AI voting guide for authenticated users.
  */
-router.post('/guide', authenticate, guideValidation, validate, guide);
+router.post('/guide', authenticate, userAiLimiter, guideValidation, validate, guide);
 
 module.exports = router;

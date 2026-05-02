@@ -12,13 +12,13 @@
   "dependencies": {
     "@axe-core/react": "^4.11.3",
     "@tailwindcss/vite": "^4.2.4",
-    "axios": "^1.15.2",
     "firebase": "^12.12.1",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.14.2",
     "tailwindcss": "^4.2.4",
+    "uuid": "^14.0.0",
     "web-vitals": "^5.2.0"
   },
   "devDependencies": {

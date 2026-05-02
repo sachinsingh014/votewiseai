@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── User Roadmap Documents ──────────────────────────────────────────────
+    // Path: /users/{uid}
+    //
+    // READ:  Only the authenticated owner can read their own roadmap.
+    // WRITE: Completely DENIED from the frontend.
+    //        All writes go through the backend Express server using the
+    //        Firebase Admin SDK, which bypasses these rules by design.
+    //        This prevents ANY client-side tampering with progress data.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;  // Admin SDK only
+    }
+
+    // ── Chat History (Subcollections) ───────────────────────────────────────
+    // Path: /users/{uid}/chats/{chatId}
+    //
+    // READ:  Only the authenticated owner.
+    // WRITE: Denied from frontend — all writes go through backend.
+    match /users/{uid}/chats/{chatId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ── Message Subcollections ──────────────────────────────────────────────
+    // Path: /users/{uid}/chats/{chatId}/messages/{messageId}
+    match /users/{uid}/chats/{chatId}/messages/{messageId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ── Default Deny ────────────────────────────────────────────────────────
+    // Any path not matched above is denied by default.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

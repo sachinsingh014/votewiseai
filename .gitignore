@@ -1,0 +1,37 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+
+# ── Environment variables — NEVER commit ─────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Service account credentials — NEVER commit ───────────────────────────────
+backend/credentials/*.json
+backend/credentials/!README.md
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+frontend/dist/
+frontend/build/
+backend/dist/
+
+# ── Test coverage ─────────────────────────────────────────────────────────────
+coverage/
+backend/coverage/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── OS & Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Firebase local cache ──────────────────────────────────────────────────────
+.firebase/
+
+# ── Temp/scratch files ────────────────────────────────────────────────────────
+backend/test-vertex.js
+backend/test-stream.js

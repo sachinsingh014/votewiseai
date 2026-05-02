@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment variables - NEVER commit these
+.env
+
+# Service account credentials - NEVER commit these
+credentials/service-account.json
+credentials/*.json
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/

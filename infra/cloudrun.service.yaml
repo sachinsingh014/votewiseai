@@ -1,0 +1,89 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: votewise-backend
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    # Only allow traffic from Firebase Hosting (internal routing) — Fixes #7
+    run.googleapis.com/ingress-status: internal-and-cloud-load-balancing
+
+spec:
+  template:
+    metadata:
+      annotations:
+        # ── Scaling Strategy ──────────────────────────────────────────────────
+        # Min instances: 1 on prod to eliminate cold starts (#1)
+        # Staging override: set to 0 via separate service YAML to save cost
+        autoscaling.knative.dev/minScale: "1"
+        # Hard ceiling to prevent runaway cost spikes (#3, #15)
+        autoscaling.knative.dev/maxScale: "20"
+
+        # ── CPU & Request Timeout ─────────────────────────────────────────────
+        # 300s for long Gemini streaming responses (#2, #4)
+        run.googleapis.com/execution-environment: gen2
+        
+    spec:
+      # Use a dedicated, least-privilege service account (#5, #8)
+      serviceAccountName: votewise-backend-sa@votewiseai-94849.iam.gserviceaccount.com
+
+      # 300-second hard timeout — allows long AI streams to complete (#4)
+      timeoutSeconds: 300
+
+      containerConcurrency: 80   # Cloud Run default; tune based on load testing
+
+      containers:
+        - image: us-central1-docker.pkg.dev/votewiseai-94849/votewise/backend:latest
+          
+          ports:
+            - name: http1
+              containerPort: 8080
+
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+
+          # ── Startup Probe (Fixes #5: deep dependency check before traffic) ──
+          startupProbe:
+            httpGet:
+              path: /api/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # ── Liveness Probe (fast — only checks if Node process is running) ──
+          livenessProbe:
+            httpGet:
+              path: /api/health/liveness
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 30
+            failureThreshold: 3
+
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "8080"
+            - name: GOOGLE_CLOUD_PROJECT_ID
+              value: "votewiseai-94849"
+            - name: GOOGLE_CLOUD_LOCATION
+              value: "us-central1"
+            - name: FIREBASE_PROJECT_ID
+              value: "votewiseai-94849"
+            - name: VERTEX_AI_MODEL
+              value: "gemini-2.5-flash"
+            # Secrets injected from Secret Manager — never hardcoded (#5)
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-api-key
+                  key: latest
+            - name: ALLOWED_ORIGINS
+              valueFrom:
+                secretKeyRef:
+                  name: allowed-origins
+                  key: latest

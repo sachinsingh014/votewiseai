@@ -1,0 +1,21 @@
+# Normalize all text files to LF on commit (consistent across Windows/Linux/Mac)
+* text=auto eol=lf
+
+# Shell scripts must always be LF (bash breaks on CRLF)
+*.sh text eol=lf
+
+# Windows-specific files can use CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files — no line ending conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

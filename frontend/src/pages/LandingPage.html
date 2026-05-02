@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VoteWise AI - Empowering Indian Voters</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#582200",
+                        "surface-container": "#ffeae0",
+                        "on-background": "#251913",
+                        "on-primary-fixed": "#341100",
+                        "on-tertiary-fixed": "#001d32",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#fce3d9",
+                        "surface-container-highest": "#f6ded3",
+                        "on-tertiary-container": "#003554",
+                        "outline-variant": "#e0c0b1",
+                        "tertiary-container": "#00a2f4",
+                        "surface-tint": "#9d4300",
+                        "tertiary": "#006398",
+                        "surface-container-low": "#fff1eb",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#07006c",
+                        "primary-fixed": "#ffdbca",
+                        "on-surface": "#251913",
+                        "inverse-primary": "#ffb690",
+                        "on-secondary-container": "#fffbff",
+                        "on-error-container": "#93000a",
+                        "background": "#fff8f6",
+                        "surface": "#fff8f6",
+                        "secondary": "#4648d4",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#ffb690",
+                        "surface-variant": "#f6ded3",
+                        "secondary-container": "#6063ee",
+                        "surface-dim": "#edd5cb",
+                        "surface-bright": "#fff8f6",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#ffede6",
+                        "on-secondary-fixed-variant": "#2f2ebe",
+                        "on-primary-fixed-variant": "#783200",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-surface-variant": "#584237",
+                        "on-tertiary-fixed-variant": "#004b74",
+                        "secondary-fixed": "#e1e0ff",
+                        "tertiary-fixed": "#cde5ff",
+                        "primary": "#9d4300",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#c0c1ff",
+                        "primary-container": "#f97316",
+                        "inverse-surface": "#3c2d26",
+                        "tertiary-fixed-dim": "#93ccff",
+                        "outline": "#8c7164"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "container-max": "1280px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "lg": "40px",
+                        "base": "8px",
+                        "xl": "64px"
+                    },
+                    "fontFamily": {
+                        "inter": ["Inter", "sans-serif"],
+                        "h3": ["Inter"],
+                        "h1": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "h2": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "h3": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "h1": ["60px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "h2": ["36px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "label-sm": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pearl-bg {
+            background-color: #fff8f6;
+        }
+        .dot-grid {
+            background-image: radial-gradient(#8c7164 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.05;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 12px -2px rgba(30, 41, 59, 0.08);
+        }
+        .top-app-bar-bg {
+            background-color: #1e293b;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="pearl-bg font-inter text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 top-app-bar-bg border-b border-slate-700 shadow-lg shadow-slate-900/20">
+<div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-orange-500 text-2xl" data-icon="how_to_vote">how_to_vote</span>
+<span class="text-xl font-bold text-white tracking-tight">VoteWise AI</span>
+</div>
+<button class="bg-secondary text-white px-6 py-2 rounded-xl text-label-sm active:scale-95 transition-transform duration-100">
+                Login
+            </button>
+</div>
+</header>
+<main class="pt-24">
+<!-- Hero Section -->
+<section class="relative overflow-hidden px-6 py-16 md:py-32">
+<div class="absolute inset-0 dot-grid pointer-events-none"></div>
+<div class="relative max-w-7xl mx-auto text-center flex flex-col items-center">
+<div class="mb-6 inline-flex items-center px-4 py-1.5 rounded-full bg-secondary/10 text-secondary font-semibold text-xs uppercase tracking-wider">
+                    Next Election: 2024
+                </div>
+<h1 class="font-h1 text-4xl md:text-h1 text-on-background max-w-3xl mb-8 leading-tight">
+                    Your AI Guide to Indian Elections
+                </h1>
+<p class="font-body-lg text-on-surface-variant max-w-xl mb-12">
+                    Empowering every citizen with unbiased data, simple registration steps, and multi-language support to make an informed choice.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+<button class="bg-primary-container text-white px-8 py-4 rounded-2xl font-bold text-body-md shadow-lg shadow-primary-container/20 active:scale-95 transition-all duration-100">
+                        Start Voting Guide
+                    </button>
+<button class="bg-white border border-outline-variant text-on-surface px-8 py-4 rounded-2xl font-semibold text-body-md active:scale-95 transition-all duration-100">
+                        How it Works
+                    </button>
+</div>
+<div class="mt-16 w-full max-w-4xl rounded-2xl overflow-hidden border border-outline-variant card-shadow">
+<img alt="Indian Election Visual" class="w-full h-auto object-cover" data-alt="A clean and modern high-angle photograph of an Indian polling station interior during a sunny day. The scene is bathed in natural, bright light reflecting the pearl and white aesthetic of the UI. It features a modern electronic voting machine on a pristine wooden table, surrounded by organized information posters in a sophisticated corporate style. The atmosphere is calm, authoritative, and technologically advanced, echoing the stability and clarity of the brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1O6FtUSHijRP--pUdTSNQajyfXr9jYDP59em9I664AVZLFyQz2PW3vULJiGEcCW5YbHBbw0mFU2_nA_lN5AB3HHxZp5qotODq_x12joPmlE7xaxo7zvKyBYa29-wpwwsn77NqqEtOibG9OFDmyHw5TS1pXGoEQxwmoGW0-sV7EmnRyMRVtm6T5Ri_bq6kM85ArqEvpSTM0fiZadkv7Il679ls538HmT-TBhyJdOMwUgQ-_tdAtB2WToigv9XpHe9HIIYSGTFTqGk"/>
+</div>
+</div>
+</section>
+<!-- Features Section -->
+<section class="px-6 py-20 bg-surface-container-lowest">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="font-h2 text-h2 text-on-background mb-4">The Future of Civic Tech</h2>
+<p class="font-body-md text-on-surface-variant">Simplified information for the modern voter.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Feature Card 1 -->
+<div class="bg-white p-8 rounded-2xl card-shadow border border-outline-variant flex flex-col items-start hover:border-secondary/30 transition-colors">
+<div class="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary mb-6">
+<span class="material-symbols-outlined text-3xl" data-icon="balance">balance</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-4">Unbiased AI</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                            Our algorithms aggregate public records and manifestos to provide neutral, fact-checked comparisons without political leaning.
+                        </p>
+</div>
+<!-- Feature Card 2 -->
+<div class="bg-white p-8 rounded-2xl card-shadow border border-outline-variant flex flex-col items-start hover:border-secondary/30 transition-colors">
+<div class="w-12 h-12 bg-primary-container/10 rounded-xl flex items-center justify-center text-primary-container mb-6">
+<span class="material-symbols-outlined text-3xl" data-icon="steps">steps</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-4">Step-by-Step Guidance</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                            From voter ID registration to finding your polling booth, we break down complex civic processes into simple, actionable steps.
+                        </p>
+</div>
+<!-- Feature Card 3 -->
+<div class="bg-white p-8 rounded-2xl card-shadow border border-outline-variant flex flex-col items-start hover:border-secondary/30 transition-colors">
+<div class="w-12 h-12 bg-tertiary-container/10 rounded-xl flex items-center justify-center text-tertiary-container mb-6">
+<span class="material-symbols-outlined text-3xl" data-icon="translate">translate</span>
+</div>
+<h3 class="font-h3 text-h3 text-on-surface mb-4">Multilingual Support</h3>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+                            Access critical election information in Hindi, English, Bengali, Tamil, and 8 other Indian languages with native AI translation.
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Bento Section -->
+<section class="px-6 py-20 pearl-bg">
+<div class="max-w-7xl mx-auto">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-base">
+<div class="md:col-span-2 bg-slate-900 rounded-2xl p-8 flex flex-col justify-between h-64 text-white">
+<h4 class="text-xl font-bold">Nationwide Reach</h4>
+<div>
+<span class="text-5xl font-extrabold text-orange-500">28</span>
+<p class="text-slate-400 mt-2">States and 8 Union Territories covered with real-time updates.</p>
+</div>
+</div>
+<div class="bg-secondary rounded-2xl p-8 flex flex-col justify-center items-center h-64 text-white text-center">
+<span class="material-symbols-outlined text-5xl mb-4" data-icon="verified_user">verified_user</span>
+<div class="text-3xl font-bold">100%</div>
+<p class="text-indigo-200 text-sm mt-2">Verified Data Sources</p>
+</div>
+<div class="bg-white border border-outline-variant rounded-2xl p-8 flex flex-col justify-center h-64 card-shadow">
+<div class="text-4xl font-bold text-on-background">50M+</div>
+<p class="text-on-surface-variant mt-2 font-medium">Voters Assisted in 2023</p>
+<div class="mt-6 flex -space-x-3">
+<div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-white overflow-hidden">
+<img alt="User" data-alt="A close-up portrait of a professional Indian man in his early 30s with a friendly expression. He is wearing a modern formal shirt, and the background is a soft, blurred corporate office setting with high-key lighting. The style is clean, sharp, and optimistic, matching the UI's modern civic theme." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVXgCH2wbbxr6GEKjMzjFRC37OYSMWTwyEJc5wWJ0YPVJpUJbnBYx9fqJ_UNSiwjcWkBUlpXm1l1bt34ofITcU0dvxQAKStNz9_BqgxcuT9NUHsj50o7Mw3eMIdeysHmmnQxL3poumu8ZC_tWbzLf02QY6Kiy1USV5euwVjnMSwB2wYr2ZBycapWFMUWu_DKb7Gk_ckpVR9JwnpiUKeicvwPj8L4z3JKoY8orn_qrj9kEpZb6CTXXS6SI0AUKsr3QMhpu_mMBaC6Q"/>
+</div>
+<div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-white overflow-hidden">
+<img alt="User" data-alt="A vibrant portrait of a young Indian woman smiling warmly towards the camera. She has a confident posture and is dressed in contemporary business casual attire. The lighting is bright and airy, emphasizing a light-mode aesthetic. The background is a clean, minimalist space with hints of orange and navy blue to maintain brand cohesion." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtvtXUxkn75qeTafHdeZJeJ0k68Jx11UBdhxucv-gbTvPieHdeVf0y0ngSqmZEi4ianVlN6ACpIG5yfmQgWhPKcMTYgdN2049j8y_PVPcaRMHzwXeUa1kExZlsMpeKVcBlbVKxUR6s34FVUrzHGJCNQJ2wwqADJowQc18MsuHhH2pgEnFA0HVTOZDESzfZsAAttaJOj0_p7HQhz6IeRHkWkBx2IKoNMRvg_S9xdJM5h--axWUUegfEghe_ZwsvuXJ4w2qkjeazWz8"/>
+</div>
+<div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-white overflow-hidden">
+<img alt="User" data-alt="A portrait of a senior Indian man looking thoughtfully off-camera, representing demographic diversity. He is in a brightly lit, modern environment with soft shadows. The image has a high-quality, professional photography look that feels institutional yet accessible, using the brand's primary navy and orange tones in the background details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL7fMLbgRT4knzciFO4UdBoMapMpGmiQ7qMYNWizQydojWOuOgmr4Q4nA4KNGPbXC6K_2BwPcOrj7RoH0Pp0uxI4_1s4M4ZvCxm4LOuEwdeMGVe7Y0MIjnslPBWh8C1foV9f1p8LV7-AmzeAj8d2NFPUlWqAa879yjVsyyUWXtLk8Q6NvehOrArnB2BYSNTSG7GDk5dCkaeCIoZWMJVpA3hGJl-lDuMswiWVt-tCzOz9nnzRf-d972RV7aQyFdz4vE2oiYRRbCjx4"/>
+</div>
+<div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-white text-xs border-2 border-white">
+                                +1k
+                            </div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-900 border-t border-slate-800 w-full py-12 px-8">
+<div class="flex flex-col md:flex-row justify-between items-center gap-6 max-w-7xl mx-auto">
+<div class="flex flex-col items-center md:items-start">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-orange-500" data-icon="how_to_vote">how_to_vote</span>
+<span class="text-lg font-semibold text-white">VoteWise AI</span>
+</div>
+<p class="font-inter text-sm text-slate-400 text-center md:text-left max-w-xs">
+                    © 2024 VoteWise AI. Empowering Indian Voters through technology and transparency.
+                </p>
+</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium" href="#">Features</a>
+<a class="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium" href="#">About</a>
+<a class="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium" href="#">Privacy Policy</a>
+<a class="text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium" href="#">Terms of Service</a>
+</div>
+<div class="flex gap-4">
+<button class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white hover:bg-orange-500 transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="share">share</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-white hover:bg-orange-500 transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="public">public</span>
+</button>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,35 @@
+# ─── Never include these in the Docker image ─────────────────────────────────
+
+# Dependencies (re-installed in Docker build)
+node_modules/
+
+# Local environment — secrets are injected at runtime via Cloud Run env vars
+.env
+.env.*
+
+# Firebase service account — injected at runtime via Workload Identity / Secret Manager
+credentials/
+*.json
+
+# Development tools
+nodemon.json
+.eslintrc.js
+eslint.config.mjs
+
+# Tests and coverage (not needed in production image)
+__tests__/
+coverage/
+jest.config.js
+
+# Logs
+logs/
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Git metadata
+.git
+.gitignore
+.github/

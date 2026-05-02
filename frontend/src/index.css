@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap');
+@import "tailwindcss";
+
+/* ── CSS Variables (Design Tokens) ── */
+:root {
+  --color-navy: #1E293B;
+  --color-orange: #F97316;
+  --color-indigo: #4F46E5;
+  --color-secondary: #3730a3;
+  --color-pearl: #fafaf9;
+  --color-on-surface: #0f172a;
+  --color-on-surface-variant: #475569;
+  --color-outline-variant: #e2e8f0;
+  --shadow-card: 0 1px 3px 0 rgba(0,0,0,0.07), 0 4px 16px -4px rgba(0,0,0,0.08);
+  --shadow-card-hover: 0 8px 40px -8px rgba(0,0,0,0.16), 0 2px 8px -2px rgba(0,0,0,0.06);
+  --shadow-glow-orange: 0 0 40px -8px rgba(249,115,22,0.35);
+  --shadow-glow-indigo: 0 0 40px -8px rgba(79,70,229,0.25);
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--color-pearl);
+  color: var(--color-on-surface);
+}
+
+/* ── Material Symbols ── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-family: 'Material Symbols Outlined';
+  font-size: inherit;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ── Semantic Utility Classes ── */
+.font-inter { font-family: 'Inter', sans-serif; }
+
+.pearl-bg { background-color: var(--color-pearl); }
+.top-app-bar-bg { background-color: var(--color-navy); }
+.card-shadow { box-shadow: var(--shadow-card); }
+
+.text-on-surface { color: var(--color-on-surface); }
+.text-on-surface-variant { color: var(--color-on-surface-variant); }
+.text-on-background { color: var(--color-on-surface); }
+.text-secondary { color: var(--color-secondary); }
+
+/* ── Custom utility classes ── */
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-secondary\/10 { background-color: rgba(55, 48, 163, 0.1); }
+.bg-secondary\/20 { background-color: rgba(55, 48, 163, 0.2); }
+.bg-secondary\/30 { background-color: rgba(55, 48, 163, 0.3); }
+.hover\:bg-secondary\/30:hover { background-color: rgba(55, 48, 163, 0.3); }
+.hover\:border-secondary\/30:hover { border-color: rgba(55, 48, 163, 0.3); }
+
+.bg-surface-container-lowest { background-color: #ffffff; }
+.bg-outline-variant { background-color: var(--color-outline-variant); }
+.border-outline-variant { border-color: var(--color-outline-variant); }
+
+/* ── Gradient Text ── */
+.gradient-text-orange {
+  background: linear-gradient(135deg, #F97316 0%, #fb923c 50%, #fdba74 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-hero {
+  background: linear-gradient(135deg, #F97316 0%, #ea580c 50%, #c2410c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Premium Card Hover ── */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* ── Glow Effects ── */
+.glow-orange { box-shadow: var(--shadow-glow-orange); }
+.glow-indigo { box-shadow: var(--shadow-glow-indigo); }
+
+/* ── Premium Gradient Button ── */
+.btn-gradient-orange {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  transition: filter 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-gradient-orange:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 8px 24px -4px rgba(249,115,22,0.5);
+}
+.btn-gradient-orange:active {
+  transform: scale(0.97);
+}
+
+/* ── Fade-in entrance animation ── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+.animate-fade-in-delay-1 { animation: fade-in 0.5s 0.1s ease-out both; }
+.animate-fade-in-delay-2 { animation: fade-in 0.5s 0.2s ease-out both; }
+.animate-fade-in-delay-3 { animation: fade-in 0.5s 0.3s ease-out both; }
+
+/* ── Dot Grid (Hero background pattern) ── */
+.dot-grid {
+  background-image: radial-gradient(#8c7164 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+/* ── Micro-interactions ── */
+button, a[role="button"] {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+button:active {
+  transform: scale(0.97);
+}
+
+/* Focus-visible ring for keyboard navigation (A11y) */
+:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ── Skeleton shimmer animation ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* ── Privacy banner entry animation ── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+/* ── Reduced Motion: respect OS-level preference ────────────────────────────
+   Users who have enabled "Reduce Motion" at the OS level get:
+   - No spinning animations (replaced with simple opacity fade)
+   - No entrance/exit animations
+   - Instant transitions instead of eased ones
+   - A subtle pulse instead of full bounce for typing indicators
+   
+   We do NOT remove ALL feedback — buttons still have visible state changes,
+   ensuring the UI does not feel "broken" for these users.
+── */
+@media (prefers-reduced-motion: reduce) {
+  /* Globally kill transitions and animations */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Preserve the loading spinner feedback — just make it a fade instead of spin */
+  .animate-spin {
+    animation: none !important;
+    opacity: 0.6;
+  }
+
+  /* Preserve bounce indicator — replace with subtle opacity pulse */
+  .animate-bounce {
+    animation: none !important;
+    opacity: 0.5;
+  }
+
+  /* Keep skeleton visible but static — it still provides layout signal */
+  .animate-pulse,
+  .skeleton-shimmer {
+    animation: none !important;
+    background: #e2e8f0;
+  }
+}
+

@@ -1,0 +1,29 @@
+{
+  "name": "votewiseai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "verify-setup.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SachinSingh014/VoteWiseAI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/SachinSingh014/VoteWiseAI/issues"
+  },
+  "homepage": "https://github.com/SachinSingh014/VoteWiseAI#readme",
+  "dependencies": {
+    "@google-cloud/speech": "^7.3.0",
+    "@google-cloud/text-to-speech": "^6.4.0",
+    "@google-cloud/translate": "^9.3.0",
+    "@google-cloud/vertexai": "^1.12.0",
+    "@google/genai": "^1.51.0",
+    "firebase-admin": "^13.8.0"
+  }
+}

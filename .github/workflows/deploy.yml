@@ -1,0 +1,272 @@
+name: Deploy — Staging & Production
+
+on:
+  push:
+    branches: [main]
+
+# Only one deployment runs at a time — prevents staggered deploy race conditions
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCP_PROJECT_ID: votewiseai-94849
+  GCP_REGION: us-central1
+  ARTIFACT_REGISTRY: us-central1-docker.pkg.dev/votewiseai-94849/votewise
+  CLOUD_RUN_SERVICE: votewise-backend
+  # Image tagged with the exact Git SHA for full traceability and 1-click rollback (#17)
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1: Build & Push Docker Image to Artifact Registry
+  # ─────────────────────────────────────────────────────────────────────────────
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write   # Required for Workload Identity Federation
+
+    outputs:
+      image: ${{ steps.build.outputs.image }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Authenticate to GCP without storing long-lived credentials (#5, #8)
+      - name: Authenticate to Google Cloud (Workload Identity)
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push Docker image
+        id: build
+        working-directory: backend
+        run: |
+          IMAGE="${{ env.ARTIFACT_REGISTRY }}/backend:${{ env.IMAGE_TAG }}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          # Also tag as 'latest' for Cloud Run default resolution
+          docker tag "$IMAGE" "${{ env.ARTIFACT_REGISTRY }}/backend:latest"
+          docker push "${{ env.ARTIFACT_REGISTRY }}/backend:latest"
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      # Artifact retention: clean up old images, keep only last 10 (#14)
+      - name: Prune old images from Artifact Registry
+        run: |
+          gcloud artifacts docker images list \
+            ${{ env.ARTIFACT_REGISTRY }}/backend \
+            --filter="NOT tags:latest" \
+            --sort-by="~CREATE_TIME" \
+            --format="get(digest)" \
+            --limit=999 | \
+            tail -n +11 | \
+            xargs -I {} gcloud artifacts docker images delete \
+              "${{ env.ARTIFACT_REGISTRY }}/backend@{}" --quiet --async || true
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 2: Build Frontend
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+        env:
+          # Inject git SHA as app version for X-App-Version handshake (#10)
+          VITE_APP_VERSION: ${{ github.sha }}
+          VITE_BACKEND_URL: https://votewiseai-94849.web.app
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 3: Deploy to Staging (10% traffic)
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, build-frontend]
+    environment: staging
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy new revision to Cloud Run (no traffic yet)
+        run: |
+          gcloud run deploy ${{ env.CLOUD_RUN_SERVICE }} \
+            --image="${{ needs.build.outputs.image }}" \
+            --region="${{ env.GCP_REGION }}" \
+            --project="${{ env.GCP_PROJECT_ID }}" \
+            --no-traffic \
+            --tag=staging \
+            --min-instances=0 \
+            --max-instances=5 \
+            --timeout=300 \
+            --service-account="${{ secrets.GCP_CLOUD_RUN_SA }}" \
+            --set-secrets="ALLOWED_ORIGINS=allowed-origins:latest" \
+            --set-env-vars="NODE_ENV=production,PORT=8080,GOOGLE_CLOUD_PROJECT_ID=${{ env.GCP_PROJECT_ID }},GOOGLE_CLOUD_LOCATION=${{ env.GCP_REGION }},FIREBASE_PROJECT_ID=${{ env.GCP_PROJECT_ID }},VERTEX_AI_MODEL=gemini-2.5-flash,RATE_LIMIT_WINDOW_MS=900000,RATE_LIMIT_MAX=100,AI_RATE_LIMIT_WINDOW_MS=60000,AI_RATE_LIMIT_MAX=10,CACHE_TTL=3600"
+
+      # ── Smoke Tests against the 'staging' tagged revision URL (#9) ──────────
+      - name: Run smoke tests against staging revision
+        run: |
+          STAGING_URL=$(gcloud run services describe ${{ env.CLOUD_RUN_SERVICE }} \
+            --region=${{ env.GCP_REGION }} \
+            --format="value(status.traffic[?tag=='staging'].url)" \
+            --project=${{ env.GCP_PROJECT_ID }})
+          
+          echo "Running smoke tests against: $STAGING_URL"
+          
+          # Test 1: Liveness probe
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL/api/health/liveness")
+          [ "$STATUS" = "200" ] || (echo "FAIL: Liveness probe returned $STATUS" && exit 1)
+          
+          # Test 2: Readiness probe (verifies Firestore connectivity)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL/api/health/readiness")
+          [ "$STATUS" = "200" ] || (echo "FAIL: Readiness probe returned $STATUS — Firestore may be down" && exit 1)
+          
+          # Test 3: Auth guard — chat endpoint must reject unauthenticated requests
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$STAGING_URL/api/ai/chat" \
+            -H "Content-Type: application/json" \
+            -d '{"question":"test"}')
+          [ "$STATUS" = "401" ] || (echo "FAIL: Auth guard returned $STATUS instead of 401" && exit 1)
+          
+          echo "✅ All smoke tests passed."
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 4: Promote to Production (100% traffic, with auto-rollback on failure)
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    environment: production   # Requires manual approval in GitHub Environments
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Capture the CURRENT production revision before we shift traffic
+      # This is our automatic rollback target (#10)
+      - name: Record current production revision (for rollback)
+        id: prev
+        run: |
+          PREV=$(gcloud run services describe ${{ env.CLOUD_RUN_SERVICE }} \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }} \
+            --format="value(status.traffic[?percent==100].revisionName)" | head -1)
+          echo "revision=$PREV" >> $GITHUB_OUTPUT
+          echo "Previous revision: $PREV"
+
+      - name: Shift 10% traffic to new revision (Canary Rollout)
+        run: |
+          gcloud run services update-traffic ${{ env.CLOUD_RUN_SERVICE }} \
+            --to-tags=staging=10 \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }}
+          echo "🚦 Canary deployment active: 10% of traffic routing to new revision."
+          sleep 15 # Wait for traffic to stabilize
+
+      # ── Canary Post-Deploy Smoke Tests (#8, #9) ──────────────────────────────
+      - name: Run canary smoke tests
+        id: smoke
+        run: |
+          PROD_URL="https://votewise-backend-${{ env.GCP_PROJECT_ID }}.a.run.app"
+          
+          echo "Validating production deployment at: $PROD_URL"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL/api/health/readiness")
+          if [ "$STATUS" != "200" ]; then
+            echo "FAIL: Canary readiness probe returned $STATUS"
+            echo "failed=true" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "✅ Canary smoke tests passed."
+
+      - name: Promote to 100% traffic
+        if: success()
+        run: |
+          gcloud run services update-traffic ${{ env.CLOUD_RUN_SERVICE }} \
+            --to-tags=staging=100 \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }}
+          echo "🚀 Promotion complete: 100% of traffic routing to new revision."
+
+      # ── Auto-Rollback on smoke test failure (#10) ─────────────────────────
+      - name: Rollback production to previous revision
+        if: failure() && steps.smoke.outputs.failed == 'true'
+        run: |
+          echo "🚨 Smoke test failed — rolling back to ${{ steps.prev.outputs.revision }}"
+          gcloud run services update-traffic ${{ env.CLOUD_RUN_SERVICE }} \
+            --to-revisions=${{ steps.prev.outputs.revision }}=100 \
+            --region=${{ env.GCP_REGION }} \
+            --project=${{ env.GCP_PROJECT_ID }}
+          echo "✅ Rollback complete. Production is serving the previous stable revision."
+
+      # ── Deploy Firebase Hosting (frontend) ───────────────────────────────────
+      - name: Download frontend dist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      - name: Deploy Frontend to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: ${{ env.GCP_PROJECT_ID }}

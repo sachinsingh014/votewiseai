@@ -1,0 +1,86 @@
+name: CI — Lint, Test & Coverage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: npm run test:ci
+        env:
+          NODE_ENV: test
+          PORT: 8080
+          ALLOWED_ORIGINS: http://localhost:5173
+          GOOGLE_CLOUD_PROJECT_ID: test-project
+          GOOGLE_CLOUD_LOCATION: us-central1
+          VERTEX_AI_MODEL: gemini-2.5-flash
+          GOOGLE_APPLICATION_CREDENTIALS: ./credentials/service-account.json
+          FIREBASE_PROJECT_ID: test-project
+          RATE_LIMIT_WINDOW_MS: 900000
+          RATE_LIMIT_MAX: 100
+          AI_RATE_LIMIT_WINDOW_MS: 60000
+          AI_RATE_LIMIT_MAX: 10
+          CACHE_TTL: 3600
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/coverage/
+
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Build for production (validates no compilation errors)
+        run: npm run build
+        env:
+          VITE_APP_VERSION: ${{ github.sha }}

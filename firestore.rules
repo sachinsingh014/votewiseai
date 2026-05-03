@@ -33,6 +33,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── System Health (Readiness Probe) ─────────────────────────────────────
+    // Path: /_system_health/{doc}
+    match /_system_health/{doc} {
+      allow read: if false;  // Backend Admin SDK only — no client access
+      allow write: if false;
+    }
+
     // ── Default Deny ────────────────────────────────────────────────────────
     // Any path not matched above is denied by default.
     match /{document=**} {

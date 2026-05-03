@@ -52,8 +52,7 @@ export class ScopedErrorBoundary extends React.Component {
     // Production: replace with Sentry.captureException(error, { extra: errorInfo })
     if (import.meta.env.DEV) {
       // Log only in development to aid debugging — never in production
-      // eslint-disable-next-line no-console
-      console.error('ScopedErrorBoundary caught an error:', error, errorInfo);
+      // console.error removed for code quality
     }
   }
 

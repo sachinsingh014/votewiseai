@@ -16,6 +16,9 @@ const LandingPage     = lazy(() => import('./pages/LandingPage'));
 const AuthPage        = lazy(() => import('./pages/AuthPage'));
 const ChatInterface   = lazy(() => import('./pages/ChatInterface'));
 const Dashboard       = lazy(() => import('./pages/Dashboard'));
+const QuizPage        = lazy(() => import('./pages/QuizPage'));
+const ChecklistPage   = lazy(() => import('./pages/ChecklistPage'));
+const EligibilityPage = lazy(() => import('./pages/EligibilityPage'));
 
 // ── Web Vitals Reporting ──────────────────────────────────────────────────────
 // Reports Core Web Vitals to the console in dev.
@@ -45,9 +48,10 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen pearl-bg flex items-center justify-center font-inter" aria-label="Loading">
+      <div className="min-h-screen pearl-bg flex items-center justify-center font-inter" aria-label="Loading" aria-live="polite">
         <div className="flex flex-col items-center gap-4">
           <span className="w-10 h-10 border-4 border-secondary border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+          <span className="sr-only">Loading, please wait...</span>
           <p className="text-sm text-on-surface-variant font-medium">Loading your session…</p>
         </div>
       </div>
@@ -171,7 +175,43 @@ function App() {
               }
             />
 
-            {/* ── 404 Fallback ── */}
+            {/* ── New Feature Routes ── */}
+            <Route
+              path="/quiz"
+              element={
+                <ProtectedRoute>
+                  <ScopedErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <QuizPage />
+                    </Suspense>
+                  </ScopedErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checklist"
+              element={
+                <ProtectedRoute>
+                  <ScopedErrorBoundary>
+                    <Suspense fallback={<DashboardSkeleton />}>
+                      <ChecklistPage />
+                    </Suspense>
+                  </ScopedErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/eligibility"
+              element={
+                <ScopedErrorBoundary>
+                  <Suspense fallback={<DashboardSkeleton />}>
+                    <EligibilityPage />
+                  </Suspense>
+                </ScopedErrorBoundary>
+              }
+            />
+
+            {/* ── 404 Catch-All ── */}
             <Route
               path="*"
               element={

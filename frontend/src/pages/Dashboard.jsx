@@ -123,7 +123,6 @@ function SkeletonCard() {
   );
 }
 
-SkeletonCard.propTypes = {};
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -258,9 +257,12 @@ export default function Dashboard() {
                   aria-hidden="true"
                 />
               </div>
-              <span className="text-sm text-slate-500 font-bold whitespace-nowrap">
-                {loading ? '…' : `${completedCount} / ${steps?.length || 0} complete`}
-              </span>
+              <div aria-live="polite" className="flex items-center">
+                <span className="sr-only">{completedCount} of {steps?.length || 0} steps completed</span>
+                <span className="text-sm text-slate-500 font-bold whitespace-nowrap" aria-hidden="true">
+                  {loading ? '…' : `${completedCount} / ${steps?.length || 0} complete`}
+                </span>
+              </div>
             </div>
           </div>
         </section>

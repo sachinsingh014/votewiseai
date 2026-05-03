@@ -11,6 +11,7 @@
 jest.mock('../../src/services/ai/ai.service', () => ({
   generateResponse: jest.fn().mockResolvedValue({ text: 'AI response', fromCache: false, fallback: false }),
   streamGemini:     jest.fn(),
+  aiStats: { getSnapshot: jest.fn().mockReturnValue({}) },
 }));
 
 // ── Real app creation ─────────────────────────────────────────────────────────

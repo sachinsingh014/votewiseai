@@ -16,6 +16,51 @@ const SAFETY_SETTINGS = [
   { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
 ];
 
+/**
+ * Tracks runtime AI service metrics for observability.
+ * Exposed via GET /api/health/readiness for monitoring dashboards.
+ */
+class AIServiceStats {
+  constructor() {
+    /** @type {number} Total AI requests processed since startup */
+    this.totalRequests = 0;
+    /** @type {number} Requests served from cache */
+    this.cacheHits = 0;
+    /** @type {number} Successful Gemini responses */
+    this.geminiSuccess = 0;
+    /** @type {number} Failed Gemini calls (fell back to static) */
+    this.geminiFailures = 0;
+    /** @type {number[]} Rolling window of last 20 response times in ms */
+    this.responseTimes = [];
+  }
+
+  /** @param {number} ms - Response latency to record */
+  recordResponseTime(ms) {
+    this.responseTimes.push(ms);
+    if (this.responseTimes.length > 20) this.responseTimes.shift();
+  }
+
+  /** @returns {number|null} Rolling average response time in ms */
+  getAverageResponseTime() {
+    if (!this.responseTimes.length) return null;
+    return Math.round(this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length);
+  }
+
+  /** @returns {object} Current stats snapshot for health endpoint */
+  getSnapshot() {
+    return {
+      totalRequests: this.totalRequests,
+      cacheHits: this.cacheHits,
+      cacheHitRate: this.totalRequests > 0
+        ? `${Math.round((this.cacheHits / this.totalRequests) * 100)}%` : '0%',
+      geminiSuccess: this.geminiSuccess,
+      geminiFailures: this.geminiFailures,
+      avgResponseTimeMs: this.getAverageResponseTime(),
+    };
+  }
+}
+const aiStats = new AIServiceStats();
+
 // ── Auth Token ────────────────────────────────────────────────────────────────
 
 const getAuthToken = async (keyFilename) => {
@@ -206,9 +251,13 @@ const generateResponse = async (env, prompt, intent = 'default', options = {}) =
   const hasContext = prompt.user.includes('<voter_context>');
 
   // Cache check
+  aiStats.totalRequests++;
   const cached = getCached(intent, prompt.user, prompt.version);
   if (cached) {
-    logger.info({ event: 'ai_cache_hit', intent, uid: options.uid || 'anon', latency_ms: Date.now() - start });
+    const latency = Date.now() - start;
+    aiStats.cacheHits++;
+    aiStats.recordResponseTime(latency);
+    logger.info({ event: 'ai_cache_hit', intent, uid: options.uid || 'anon', latency_ms: latency });
     return { text: cached, fromCache: true };
   }
 
@@ -219,6 +268,8 @@ const generateResponse = async (env, prompt, intent = 'default', options = {}) =
     const modResult = moderateOutput(text, intent);
 
     const latency = Date.now() - start;
+    aiStats.geminiSuccess++;
+    aiStats.recordResponseTime(latency);
 
     // Structured AI telemetry log
     logger.info({
@@ -237,15 +288,18 @@ const generateResponse = async (env, prompt, intent = 'default', options = {}) =
 
     return { text: modResult.text, fromCache: false, flagged: modResult.flagged ?? false };
   } catch (err) {
+    const latency = Date.now() - start;
+    aiStats.geminiFailures++;
+    aiStats.recordResponseTime(latency);
     logger.error({
       event: 'ai_error',
       intent,
       uid: options.uid || 'anon',
       error: err.message,
-      latency_ms: Date.now() - start,
+      latency_ms: latency,
     });
     return { text: getFallback(intent), fromCache: false, fallback: true };
   }
 };
 
-module.exports = { generateResponse, streamGemini };
+module.exports = { generateResponse, streamGemini, aiStats };

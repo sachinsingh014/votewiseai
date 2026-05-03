@@ -38,7 +38,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="pt-20">
+      <main id="main-content" className="pt-20">
         {/* ── Hero Section ── */}
         <section
           className="relative overflow-hidden px-6 py-20 md:py-36"

@@ -48,6 +48,7 @@ export default function ChatInterface() {
       )}
 
       <aside
+        id="chat-sidebar"
         className={`fixed md:relative top-0 left-0 h-full w-72 z-30 flex flex-col transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
         style={{ background: 'linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%)' }}
         aria-label="Chat sidebar"
@@ -103,6 +104,8 @@ export default function ChatInterface() {
             className="md:hidden w-9 h-9 flex items-center justify-center text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition-colors"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open sidebar menu"
+            aria-expanded={sidebarOpen}
+            aria-controls="chat-sidebar"
           >
             <span className="material-symbols-outlined" aria-hidden="true">menu</span>
           </button>
@@ -179,6 +182,7 @@ export default function ChatInterface() {
               aria-label="Send message"
             >
               <span className="material-symbols-outlined text-xl" aria-hidden="true">send</span>
+              <span className="sr-only">Send message</span>
             </button>
           </div>
         </div>

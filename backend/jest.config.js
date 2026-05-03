@@ -32,4 +32,7 @@ module.exports = {
   testTimeout: 10000,
   // Silence logger noise during test runs
   setupFiles: ['./tests/setup.js'],
+  globalSetup: './tests/globalSetup.js',
+  verbose: true,
+  detectOpenHandles: true,
 };

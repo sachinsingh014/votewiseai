@@ -12,6 +12,7 @@ const { generalLimiter, aiLimiter } = require('./middleware/rateLimiter');
 const { initFirebase } = require('./config/firebase');
 const routes = require('./routes');
 const logger = require('./utils/logger');
+const { aiStats } = require('./services/ai/ai.service');
 
 const createApp = (env) => {
   const app = express();
@@ -23,8 +24,9 @@ const createApp = (env) => {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:'],
+        styleSrc: ["'self'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", 'data:', 'https://lh3.googleusercontent.com'],
         upgradeInsecureRequests: [],
       },
     },
@@ -84,10 +86,10 @@ const createApp = (env) => {
     }
 
     if (isHealthy) {
-      return res.status(200).json({ status: 'ready', dependencies, security, timestamp: new Date().toISOString() });
+      return res.status(200).json({ status: 'ready', dependencies, aiStats: aiStats.getSnapshot(), security, timestamp: new Date().toISOString() });
     }
     logger.error({ message: 'Readiness probe failed', dependencies });
-    return res.status(503).json({ status: 'unavailable', dependencies, security, timestamp: new Date().toISOString() });
+    return res.status(503).json({ status: 'unavailable', dependencies, aiStats: aiStats.getSnapshot(), security, timestamp: new Date().toISOString() });
   });
 
   // Body parsing

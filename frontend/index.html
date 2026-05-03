@@ -4,10 +4,38 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta
+      name="description"
+      content="VoteWise AI - Your personalized AI guide to Indian elections. Get step-by-step voter registration help, unbiased candidate comparisons, and real-time election info powered by Google Gemini AI."
+    />
+    <meta
+      name="keywords"
+      content="voter guide, Indian elections, voter ID, ECI, voting process, election assistant, AI civic platform, Gemini AI"
+    />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="robots" content="index, follow" />
+    <title>VoteWise AI — Smart Guide to Indian Elections</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Skip-link for WCAG 2.1 SC 2.4.1 keyboard navigation compliance -->
+    <a
+      href="#main-content"
+      style="
+        position: absolute;
+        left: -9999px;
+        top: auto;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+      "
+      onfocus="this.style.cssText='position:fixed;top:0;left:0;z-index:9999;padding:8px 16px;background:#f97316;color:#fff;font-weight:700;border-radius:0 0 8px 0;width:auto;height:auto;'"
+      onblur="this.style.cssText='position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;'"
+    >
+      Skip to main content
+    </a>
+    <div id="root" role="application" aria-label="VoteWise AI Application"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

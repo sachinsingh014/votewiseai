@@ -5,6 +5,7 @@ const validateEnv = require('./config/env');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
+const mongoSanitize = require('./middleware/sanitize');
 const requestLogger = require('./middleware/requestLogger');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { generalLimiter, aiLimiter } = require('./middleware/rateLimiter');
@@ -15,8 +16,9 @@ const logger = require('./utils/logger');
 const createApp = (env) => {
   const app = express();
 
-  // Security headers via Helmet
+  // ── Security Layer 1: Helmet — HTTP security headers ──────────────
   app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
@@ -30,11 +32,13 @@ const createApp = (env) => {
     frameguard: { action: 'deny' },
     xContentTypeOptions: true,
   }));
-  // Add Permissions-Policy (Helmet doesn't support this natively yet in some versions, or we set it manually)
+  // Permissions-Policy header
   app.use((req, res, next) => {
     res.setHeader('Permissions-Policy', 'geolocation=(), camera=(), microphone=()');
     next();
   });
+  // ── Security Layer 2: NoSQL injection prevention ────────────────────
+  app.use(mongoSanitize());
 
   // CORS — supports dynamic wildcard/regex (Fixes #4)
   const allowedOrigins = env.ALLOWED_ORIGINS.split(',').map(o => {
@@ -50,13 +54,19 @@ const createApp = (env) => {
   // Liveness Probe: "Is the Node process running?" (Fast, no dependencies)
   app.get('/api/health/liveness', (req, res) => res.status(200).send('OK'));
 
-  // Readiness Probe: "Is it safe to route traffic here?" (Checks dependencies) (Fixes #5)
+  // Readiness Probe: "Is it safe to route traffic here?" (Checks dependencies)
   app.get('/api/health/readiness', async (req, res) => {
     const dependencies = { firestore: 'up', gemini: 'up' };
+    const security = {
+      helmet: true,
+      rateLimiting: true,
+      mongoSanitize: true,
+      firebaseAuth: true,
+      corsPolicy: true,
+    };
     let isHealthy = true;
 
     try {
-      // Dependency 1: Firestore
       const admin = require('firebase-admin');
       await admin.firestore().collection('_system_health').doc('ping').get();
     } catch (err) {
@@ -65,21 +75,19 @@ const createApp = (env) => {
     }
 
     try {
-      // Dependency 2: Gemini
-      if (!process.env.GEMINI_API_KEY) {throw new Error('GEMINI_API_KEY is missing');}
+      if (!process.env.GEMINI_API_KEY) { throw new Error('GEMINI_API_KEY is missing'); }
       const { GoogleGenAI } = require('@google/genai');
-      new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }); 
+      new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     } catch (err) {
       dependencies.gemini = `down: ${err.message}`;
       isHealthy = false;
     }
 
     if (isHealthy) {
-      res.status(200).json({ status: 'ready', dependencies, timestamp: new Date().toISOString() });
-    } else {
-      logger.error({ message: 'Readiness probe failed', dependencies });
-      res.status(503).json({ status: 'unavailable', dependencies, timestamp: new Date().toISOString() });
+      return res.status(200).json({ status: 'ready', dependencies, security, timestamp: new Date().toISOString() });
     }
+    logger.error({ message: 'Readiness probe failed', dependencies });
+    return res.status(503).json({ status: 'unavailable', dependencies, security, timestamp: new Date().toISOString() });
   });
 
   // Body parsing

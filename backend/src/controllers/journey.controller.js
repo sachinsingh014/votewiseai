@@ -46,18 +46,18 @@ const completeStep = async (req, res, next) => {
     const userRef = getDb().collection('users').doc(uid);
     const docSnap = await userRef.get();
 
-    if (!docSnap.exists) return apiResponse.notFound(res, 'Roadmap not found.');
+    if (!docSnap.exists) {return apiResponse.notFound(res, 'Roadmap not found.');}
 
     const { roadmap } = docSnap.data();
     const targetStep = roadmap.find((s) => s.id === stepId);
 
-    if (!targetStep) return apiResponse.badRequest(res, `Step ${stepId} missing.`);
-    if (targetStep.status === 'completed') return apiResponse.success(res, { roadmap, message: 'Done.' });
-    if (targetStep.status === 'locked') return apiResponse.badRequest(res, 'Step locked.');
+    if (!targetStep) {return apiResponse.badRequest(res, `Step ${stepId} missing.`);}
+    if (targetStep.status === 'completed') {return apiResponse.success(res, { roadmap, message: 'Done.' });}
+    if (targetStep.status === 'locked') {return apiResponse.badRequest(res, 'Step locked.');}
 
     const updatedRoadmap = roadmap.map((step) => {
-      if (step.id === stepId) return { ...step, status: 'completed' };
-      if (step.id === stepId + 1) return { ...step, status: 'action_required' };
+      if (step.id === stepId) {return { ...step, status: 'completed' };}
+      if (step.id === stepId + 1) {return { ...step, status: 'action_required' };}
       return step;
     });
 

@@ -18,10 +18,10 @@ module.exports = {
   rules: {
     // File and function size limits (adjusted for Express/Streaming patterns)
     'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
-    'max-lines-per-function': 'off',
-    'max-depth': 'off',
-    'complexity': 'off',
-    'max-params': 'off',
+    'max-lines-per-function': ['error', { max: 50, skipBlankLines: true, skipComments: true }],
+    'max-depth': ['error', 4],
+    'complexity': ['error', 10],
+    'max-params': ['error', 5],
 
     // Code quality
     'no-console': 'error',

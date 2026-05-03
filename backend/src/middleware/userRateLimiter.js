@@ -1,32 +1,48 @@
 'use strict';
 
 /**
- * In-memory, per-user AI rate limiter.
+ * @fileoverview Per-user AI rate limiter for VoteWise AI backend.
+ * @module middleware/userRateLimiter
  *
  * Architecture:
- * - Backed by a simple Map<uid, { count, resetAt }>.
- * - Hidden behind a RateStore interface so Redis can be swapped in later
- *   with zero business-logic changes (just replace the store implementation).
+ *  - Backed by an in-memory Map keyed by Firebase UID (not IP address).
+ *  - Hidden behind a simple store interface so Redis can be swapped in later
+ *    with zero changes to the business logic in userAiLimiter.
+ *  - Includes automatic cleanup of expired entries to prevent memory leaks.
  *
- * Limits:
- * - 20 AI requests per user per hour.
- * - Window resets on a sliding 1-hour basis from the user's first request.
+ * Limits: 20 AI requests per authenticated user per hour (sliding window).
  *
  * Why not use express-rate-limit?
- * - express-rate-limit keys by IP, which is useless for authenticated users
- *   (shared IPs, proxies, VPNs, etc.).
- * - We need to key by Firebase UID to enforce per-account fairness.
+ *  - express-rate-limit keys by IP, which fails for authenticated users
+ *    sharing IPs (proxies, corporate networks, mobile NAT).
+ *  - Keying by Firebase UID ensures per-account fairness.
  */
 
-const USER_LIMIT = 20;          // max AI requests per window
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour in ms
+/** @constant {number} USER_LIMIT - Maximum AI requests per user per time window */
+const USER_LIMIT = 20;
 
-/** @type {Map<string, { count: number, resetAt: number }>} */
+/** @constant {number} WINDOW_MS - Rate limit time window duration in milliseconds (1 hour) */
+const WINDOW_MS = 60 * 60 * 1000;
+
+/**
+ * @typedef {Object} RateEntry
+ * @property {number} count - Number of requests made within the current window
+ * @property {number} resetAt - Unix timestamp (ms) when the current window expires
+ */
+
+/**
+ * In-memory store mapping Firebase UIDs to their current rate limit state.
+ * @type {Map<string, RateEntry>}
+ */
 const store = new Map();
 
 /**
- * Cleans up expired entries to prevent memory leaks.
- * Called internally on each check.
+ * Removes expired rate limit entries from the in-memory store.
+ * Called before every rate check to prevent unbounded memory growth.
+ *
+ * COMPLEXITY: O(n) where n is the number of tracked users — typically small in practice.
+ *
+ * @returns {void}
  */
 const cleanup = () => {
   const now = Date.now();
@@ -38,10 +54,17 @@ const cleanup = () => {
 };
 
 /**
- * Checks and increments the user's request count.
+ * Checks whether a user is within their rate limit and increments their counter.
+ * Creates a new rate window if the user has no entry or their window has expired.
  *
- * @param {string} uid - Firebase UID
- * @returns {{ allowed: boolean, remaining: number, resetAt: number }}
+ * SECURITY: Only the Firebase UID is stored — no PII is retained in the rate store.
+ *
+ * @param {string} uid - The authenticated user's Firebase UID
+ * @returns {{ allowed: boolean, remaining: number, resetAt: number }} Rate limit result
+ *
+ * @example
+ * const { allowed, remaining, resetAt } = checkUserLimit('uid_abc123');
+ * // allowed: true, remaining: 19, resetAt: <timestamp 1hr from now>
  */
 const checkUserLimit = (uid) => {
   cleanup();
@@ -50,7 +73,7 @@ const checkUserLimit = (uid) => {
   const entry = store.get(uid);
 
   if (!entry || now >= entry.resetAt) {
-    // New window
+    // Start a fresh window for this user
     store.set(uid, { count: 1, resetAt: now + WINDOW_MS });
     return { allowed: true, remaining: USER_LIMIT - 1, resetAt: now + WINDOW_MS };
   }
@@ -64,16 +87,25 @@ const checkUserLimit = (uid) => {
 };
 
 /**
- * Express middleware that enforces per-user AI rate limits.
- * Requires authenticate() middleware to run first (req.user must be set).
+ * Express middleware that enforces per-user AI request rate limits.
+ * Must run AFTER `authenticate` middleware so that `req.user.uid` is populated.
+ * Falls through silently if no authenticated user is present (IP limiter handles that case).
+ *
+ * SECURITY: Sets standard X-RateLimit-* headers so clients can implement
+ * back-off strategies and display usage information to users.
+ *
+ * @param {import('express').Request} req - Express request object (requires req.user.uid)
+ * @param {import('express').Response} res - Express response object
+ * @param {import('express').NextFunction} next - Express next middleware function
+ * @returns {void} Calls next() if within limit; returns 429 JSON if limit exceeded
  */
 const userAiLimiter = (req, res, next) => {
-  // If no authenticated user, fall through (general IP limiter handles this)
-  if (!req.user?.uid) {return next();}
+  // Fall through if no authenticated user — the IP-based general limiter handles this
+  if (!req.user?.uid) { return next(); }
 
   const { allowed, remaining, resetAt } = checkUserLimit(req.user.uid);
 
-  // Add standard rate limit headers
+  // Expose standard rate limit headers for client-side back-off handling
   res.setHeader('X-RateLimit-Limit', USER_LIMIT);
   res.setHeader('X-RateLimit-Remaining', remaining);
   res.setHeader('X-RateLimit-Reset', Math.ceil(resetAt / 1000));

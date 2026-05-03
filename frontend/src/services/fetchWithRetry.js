@@ -1,41 +1,95 @@
 /**
- * Resilient fetch utility with exponential backoff retry.
+ * @fileoverview Resilient fetch utility with exponential backoff retry for VoteWise AI frontend.
+ * @module services/fetchWithRetry
  *
- * Safety rules:
- * - ONLY retries GET requests (idempotent). POST/PUT/DELETE never auto-retry.
- * - Retries only on transient errors (network failure, 502, 503, 504).
- * - Permanent errors (400, 401, 403, 404, 409, 422, 429) fail immediately.
- * - Respects navigator.onLine — won't retry if the user is offline.
+ * Safety rules enforced by this module:
+ *  - ONLY retries GET/HEAD requests (idempotent). POST/PUT/DELETE never auto-retry.
+ *  - Retries only on transient server errors (502, 503, 504) and network failures.
+ *  - Permanent client errors (400, 401, 403, 404, 409, 422, 429) fail immediately.
+ *  - Respects navigator.onLine — won't retry if the browser reports offline status.
+ *  - Injects X-App-Version header for server-side client version detection.
  *
- * @param {string} url
- * @param {RequestInit} options
- * @param {{ maxRetries?: number, baseDelayMs?: number }} retryConfig
+ * PERFORMANCE: Uses exponential backoff with ±20% randomized jitter to prevent
+ * thundering herd effects when many clients retry simultaneously after an outage.
  */
 
+/**
+ * HTTP status codes that indicate transient server errors worth retrying.
+ * @type {Set<number>}
+ */
 const TRANSIENT_STATUS_CODES = new Set([502, 503, 504]);
-const PERMANENT_STATUS_CODES = new Set([400, 401, 403, 404, 409, 426, 422, 429]); // Added 426 Upgrade Required
 
+/**
+ * HTTP status codes that indicate permanent errors — retrying would not help.
+ * @type {Set<number>}
+ */
+const PERMANENT_STATUS_CODES = new Set([400, 401, 403, 404, 409, 426, 422, 429]);
+
+/**
+ * Returns a Promise that resolves after the given number of milliseconds.
+ *
+ * @param {number} ms - Duration to sleep in milliseconds
+ * @returns {Promise<void>} Promise that resolves after the delay
+ */
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Calculates the delay for a retry attempt using exponential backoff with jitter.
+ * Formula: clamp(baseDelayMs × 2^attempt ± 20% jitter, 100ms, ∞)
+ *
+ * COMPLEXITY: O(1)
+ *
+ * @param {number} baseDelayMs - Base delay in milliseconds
+ * @param {number} attempt - Current attempt index (0-based)
+ * @returns {number} Computed delay in milliseconds (minimum 100ms)
+ */
+const computeDelay = (baseDelayMs, attempt) => {
+  const base = baseDelayMs * Math.pow(2, attempt);
+  const jitter = base * 0.2 * (Math.random() * 2 - 1);
+  return Math.max(100, Math.floor(base + jitter));
+};
+
+/**
+ * @typedef {Object} RetryConfig
+ * @property {number} [maxRetries=3] - Maximum number of retry attempts
+ * @property {number} [baseDelayMs=500] - Base delay in ms for exponential backoff
+ */
+
+/**
+ * Fetches a URL with automatic retry on transient failures.
+ * Injects the X-App-Version header for all requests to enable server-side
+ * version compatibility checks (responds with 426 if client is outdated).
+ *
+ * @param {string} url - The endpoint URL to fetch
+ * @param {RequestInit} [options={}] - Standard fetch options (method, headers, body, signal)
+ * @param {RetryConfig} [retryConfig={}] - Retry behaviour configuration
+ * @returns {Promise<Response>} The fetch Response object
+ * @throws {Error} If the request exceeds maxRetries, is explicitly aborted, or the browser is offline
+ *
+ * @example
+ * const res = await fetchWithRetry('/api/health/liveness', { method: 'GET' });
+ * if (!res.ok) throw new Error('Backend unavailable');
+ * const data = await res.json();
+ */
 export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
   const { maxRetries = 3, baseDelayMs = 500 } = retryConfig;
   const method = (options.method || 'GET').toUpperCase();
 
-  // Inject strict client version handshake
+  // Inject client version header for server-side compatibility detection
   const headers = {
     ...options.headers,
-    'X-App-Version': import.meta.env.VITE_APP_VERSION || '1.0.0'
+    'X-App-Version': import.meta.env.VITE_APP_VERSION || '1.0.0',
   };
 
   const finalOptions = { ...options, headers };
 
-  // Never retry non-idempotent methods
+  // Only GET and HEAD are safe to retry without risk of duplicate side-effects
   const isIdempotent = method === 'GET' || method === 'HEAD';
 
   let lastError;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    // Abort immediately if offline
+    // Abort immediately if the browser reports no network connection
     if (!navigator.onLine) {
       throw new Error('You are offline. Please check your connection.');
     }
@@ -43,44 +97,33 @@ export async function fetchWithRetry(url, options = {}, retryConfig = {}) {
     try {
       const res = await fetch(url, finalOptions);
 
-      // Handle version mismatch explicitly
+      // 426 Upgrade Required — client version is outdated, do not retry
       if (res.status === 426) {
-        console.error('[fetchWithRetry] Client version outdated. Hard refresh required.');
-        // In a real app, you might trigger a forced window.location.reload(true) here
-        return res; 
+        return res;
       }
 
-      // Permanent errors — no point retrying
+      // Permanent errors — pass through to the caller immediately
       if (PERMANENT_STATUS_CODES.has(res.status)) {
-        return res; // Let the caller handle 401, 429, etc.
+        return res;
       }
 
-      // Transient server error — retry if idempotent
+      // Transient server error — retry with exponential backoff if safe to do so
       if (TRANSIENT_STATUS_CODES.has(res.status) && isIdempotent && attempt < maxRetries) {
-        // Exponential backoff with 20% randomized jitter to prevent thundering herd
-        const base = baseDelayMs * Math.pow(2, attempt);
-        const jitter = base * 0.2 * (Math.random() * 2 - 1); 
-        const delay = Math.max(100, Math.floor(base + jitter));
-        
-        console.warn(`[fetchWithRetry] ${res.status} on attempt ${attempt + 1}. Retrying in ${delay}ms...`);
+        const delay = computeDelay(baseDelayMs, attempt);
         await sleep(delay);
         continue;
       }
 
       return res;
     } catch (err) {
-      // If the request was explicitly aborted, DO NOT retry. Throw immediately.
+      // AbortError means the caller explicitly cancelled — never retry
       if (err.name === 'AbortError') throw err;
 
       lastError = err;
 
-      // Network error (e.g., ERR_CONNECTION_REFUSED) — retry if idempotent
+      // Network failure (e.g., ERR_CONNECTION_REFUSED) — retry if idempotent
       if (isIdempotent && attempt < maxRetries) {
-        const base = baseDelayMs * Math.pow(2, attempt);
-        const jitter = base * 0.2 * (Math.random() * 2 - 1); 
-        const delay = Math.max(100, Math.floor(base + jitter));
-        
-        console.warn(`[fetchWithRetry] Network error on attempt ${attempt + 1}. Retrying in ${delay}ms...`);
+        const delay = computeDelay(baseDelayMs, attempt);
         await sleep(delay);
       } else {
         throw err;

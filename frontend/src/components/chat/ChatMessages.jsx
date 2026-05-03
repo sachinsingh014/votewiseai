@@ -1,5 +1,16 @@
+import PropTypes from 'prop-types';
 
+/**
+ * @fileoverview Chat message display components for the VoteWise AI chat interface.
+ * @module components/chat/ChatMessages
+ */
 
+/**
+ * Animated three-dot typing indicator shown while the AI is generating a response.
+ * Includes ARIA live region and label for screen reader accessibility.
+ *
+ * @returns {JSX.Element} Animated typing indicator element
+ */
 export function TypingIndicator() {
   return (
     <div className="flex items-end gap-3 mb-5" aria-label="VoteWise AI is typing" aria-live="polite">
@@ -17,6 +28,26 @@ export function TypingIndicator() {
   );
 }
 
+/**
+ * @typedef {Object} Message
+ * @property {'user'|'ai'} role - Who sent the message
+ * @property {string} text - The message text content
+ * @property {boolean} [streaming] - Whether the AI is still streaming this message
+ */
+
+/**
+ * Renders a single chat message bubble for either the user or the AI.
+ * AI messages include a streaming cursor animation and error state styling.
+ * User messages are displayed in a right-aligned orange gradient bubble.
+ *
+ * @param {Object} props - Component props
+ * @param {Message} props.message - The message object to render
+ * @returns {JSX.Element} Styled chat bubble element
+ *
+ * @example
+ * <ChatMessage message={{ role: 'ai', text: 'Hello!', streaming: false }} />
+ * <ChatMessage message={{ role: 'user', text: 'How do I register?' }} />
+ */
 export function ChatMessage({ message }) {
   if (message.role === 'ai') {
     const isEmpty = !message.text && !message.streaming;
@@ -48,3 +79,11 @@ export function ChatMessage({ message }) {
     </div>
   );
 }
+
+ChatMessage.propTypes = {
+  message: PropTypes.shape({
+    role: PropTypes.oneOf(['user', 'ai']).isRequired,
+    text: PropTypes.string,
+    streaming: PropTypes.bool,
+  }).isRequired,
+};

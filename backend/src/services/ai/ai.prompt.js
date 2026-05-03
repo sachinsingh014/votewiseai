@@ -1,14 +1,17 @@
 'use strict';
 
 /**
- * Structured prompt templates for VoteWise AI.
+ * @fileoverview Structured prompt templates and sanitizers for VoteWise AI.
+ * @module services/ai/ai.prompt
  *
  * Design principles:
- * - System prompt is ALWAYS passed via Gemini's systemInstruction, NEVER
- *   concatenated with user input (prevents prompt injection).
- * - User context (state, age) is interpolated inside clearly delimited
- *   <context> tags so the model treats them as data, not instructions.
- * - Each template is versioned so we can track prompt changes over time.
+ *  - System prompt is ALWAYS passed via Gemini's systemInstruction, NEVER
+ *    concatenated with user input — this prevents prompt injection attacks.
+ *  - User context (state, age) is interpolated inside clearly delimited
+ *    XML-style tags so the model treats them as data, not instructions.
+ *  - Each template is versioned so cache misses are triggered automatically
+ *    when prompt logic changes.
+ *  - State and age inputs are validated against allowlists before injection.
  */
 
 const PROMPT_VERSION = '3.0.0';

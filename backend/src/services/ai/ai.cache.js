@@ -1,5 +1,17 @@
 'use strict';
 
+/**
+ * @fileoverview In-memory AI response cache for VoteWise AI backend.
+ * @module services/ai/ai.cache
+ * @requires crypto
+ * @requires node-cache
+ * @requires utils/logger
+ *
+ * Uses SHA-256-keyed node-cache with intent-based TTL tiers to avoid redundant
+ * Gemini API calls. Cache keys include the prompt version so stale entries are
+ * automatically bypassed after a prompt template update.
+ */
+
 const crypto = require('crypto');
 const NodeCache = require('node-cache');
 const logger = require('../../utils/logger');

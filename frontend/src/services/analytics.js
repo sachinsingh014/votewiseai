@@ -34,8 +34,9 @@ const track = (eventName, properties = {}) => {
     ...properties,
   };
 
-  // Development: log to console for inspection
+  // Development: log to console for inspection — never fires in production
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
     console.debug('[Analytics]', payload);
   }
 
@@ -95,8 +96,8 @@ export const Analytics = {
 
   /** User denies analytics consent */
   consentDenied: () => {
-    // We can still fire a privacy-safe count (no PII, no UID)
-    // This does NOT require consent since it contains zero personal data
-    console.debug('[Analytics] Privacy_Consent_Denied logged locally only.');
+    // Privacy_Consent_Denied is intentionally not tracked via Firebase Analytics.
+    // This is a privacy-safe local-only count — no network request, no PII.
+    // In production, increment a privacy-safe counter in a server-side aggregator.
   },
 };

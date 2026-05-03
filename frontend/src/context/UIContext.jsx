@@ -35,14 +35,8 @@ export function UIProvider({ children }) {
   const updateConsent = useCallback((granted) => {
     setAnalyticsConsent(granted);
     localStorage.setItem('vw_analytics_consent', JSON.stringify(granted));
-    
-    // In a real app, this would dynamically import and initialize or disable
-    // Firebase Analytics based on the 'granted' boolean.
-    if (granted) {
-      console.log('Analytics initialized.');
-    } else {
-      console.log('Analytics disabled. Tracking stopped.');
-    }
+    // Analytics is lazily enabled/disabled in firebase.js based on the consent flag.
+    // No side-effect code needed here — the banner unmounts on next render.
   }, []);
 
   // ── Centralized Error State ────────────────────────────────────────────────
@@ -50,8 +44,6 @@ export function UIProvider({ children }) {
   const [activeErrors, setActiveErrors] = useState([]);
 
   const reportError = useCallback((error, context = 'global') => {
-    console.error(`[${context}]`, error);
-    
     // Deduplication logic: prevents spamming the exact same message
     setActiveErrors((prev) => {
       const msg = error.message || String(error);

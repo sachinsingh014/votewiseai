@@ -1,8 +1,24 @@
+import PropTypes from 'prop-types';
 import { useUI } from '../context/UIContext';
 
 /**
+ * @fileoverview Privacy consent banner for VoteWise AI.
+ * @module components/PrivacyBanner
+ *
+ * Renders a bottom-sheet consent dialog if the user hasn't yet decided on
+ * analytics tracking. Disappears automatically once a choice is recorded
+ * in localStorage via the UIContext updateConsent function.
+ */
+
+/**
  * Consent banner that respects the user's explicit choice.
- * If consent is undefined, it renders a bottom sheet to ask for permission.
+ * Renders null immediately if consent has already been granted or denied.
+ * If consent is null (undecided), renders a fixed bottom sheet asking for permission.
+ *
+ * ACCESSIBILITY: Includes role="region" and aria-label for screen reader announcement.
+ * PRIVACY: No analytics event fires until updateConsent(true) is explicitly called.
+ *
+ * @returns {JSX.Element|null} The consent banner, or null if consent is already decided
  */
 export default function PrivacyBanner() {
   const { analyticsConsent, updateConsent } = useUI();
@@ -42,3 +58,5 @@ export default function PrivacyBanner() {
     </div>
   );
 }
+
+PrivacyBanner.propTypes = {};

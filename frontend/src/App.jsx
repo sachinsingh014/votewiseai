@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster, toast } from 'react-hot-toast';
 import { onCLS, onINP, onLCP, onFCP, onTTFB } from 'web-vitals';
@@ -21,6 +22,7 @@ const Dashboard       = lazy(() => import('./pages/Dashboard'));
 // In production, replace console.debug with your analytics provider.
 const reportWebVitals = (metric) => {
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
     console.debug(`[WebVitals] ${metric.name}:`, Math.round(metric.value), metric.rating);
   }
   // Production: logEvent(analytics, metric.name, { value: metric.value });
@@ -55,6 +57,11 @@ const ProtectedRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" replace />;
 };
 
+ProtectedRoute.propTypes = {
+  /** The protected component subtree to render when authenticated */
+  children: PropTypes.node.isRequired,
+};
+
 /**
  * PublicRoute — redirects authenticated users away from /login.
  */
@@ -62,6 +69,11 @@ const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return null;
   return user ? <Navigate to="/guide" replace /> : children;
+};
+
+PublicRoute.propTypes = {
+  /** The public component subtree to render when not authenticated */
+  children: PropTypes.node.isRequired,
 };
 
 // ── Toast-Aware Offline Notifier ──────────────────────────────────────────────

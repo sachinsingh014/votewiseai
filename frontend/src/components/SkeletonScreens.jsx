@@ -1,5 +1,8 @@
+import PropTypes from 'prop-types';
+
 /**
- * Skeleton screen components for route-level lazy loading.
+ * @fileoverview Skeleton screen components for route-level lazy loading.
+ * @module components/SkeletonScreens
  *
  * These match the physical layout of their respective pages to prevent
  * Cumulative Layout Shift (CLS) during Suspense fallback rendering.
@@ -8,17 +11,44 @@
  * the exact padding, height, and position of the real content block.
  */
 
-/** Reusable animated shimmer bar */
+/**
+ * Reusable animated shimmer bar — thin horizontal placeholder line.
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.className - Tailwind class string for sizing and color
+ * @returns {JSX.Element} Animated pulse bar element
+ */
 const Bar = ({ className }) => (
   <div className={`bg-slate-200 rounded-lg animate-pulse ${className}`} />
 );
 
-/** Reusable animated shimmer block */
+Bar.propTypes = {
+  /** Tailwind CSS classes for width, height, and custom color overrides */
+  className: PropTypes.string.isRequired,
+};
+
+/**
+ * Reusable animated shimmer block — larger rectangular placeholder area.
+ *
+ * @param {Object} props - Component props
+ * @param {string} props.className - Tailwind class string for sizing and color
+ * @returns {JSX.Element} Animated pulse block element
+ */
 const Block = ({ className }) => (
   <div className={`bg-slate-100 rounded-xl animate-pulse ${className}`} />
 );
 
-/** Skeleton for the Dashboard / Voting Guide page */
+Block.propTypes = {
+  /** Tailwind CSS classes for width, height, and custom color overrides */
+  className: PropTypes.string.isRequired,
+};
+
+/**
+ * Skeleton for the Dashboard / Voting Guide page.
+ * Mirrors the navbar, progress header, and step card layout.
+ *
+ * @returns {JSX.Element} Full-page dashboard skeleton
+ */
 export function DashboardSkeleton() {
   return (
     <div className="min-h-screen pearl-bg font-inter" aria-hidden="true" aria-label="Loading dashboard">
@@ -50,7 +80,12 @@ export function DashboardSkeleton() {
   );
 }
 
-/** Skeleton for the Chat Interface page */
+/**
+ * Skeleton for the Chat Interface page.
+ * Mirrors the sidebar and chat message layout.
+ *
+ * @returns {JSX.Element} Full-page chat skeleton
+ */
 export function ChatSkeleton() {
   return (
     <div className="flex h-screen bg-slate-50 font-inter" aria-hidden="true" aria-label="Loading chat">
@@ -91,7 +126,12 @@ export function ChatSkeleton() {
   );
 }
 
-/** Skeleton for the Auth / Login page */
+/**
+ * Skeleton for the Auth / Login page.
+ * Mirrors the centered auth card layout.
+ *
+ * @returns {JSX.Element} Full-page auth skeleton
+ */
 export function AuthSkeleton() {
   return (
     <div className="min-h-screen pearl-bg flex items-center justify-center font-inter" aria-hidden="true">

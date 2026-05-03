@@ -1,22 +1,60 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 /**
- * Reusable Error Boundary for scoped error handling.
- * Prevents a single component failure from crashing the entire app.
+ * @fileoverview Scoped Error Boundary component for VoteWise AI.
+ * @module components/ScopedErrorBoundary
+ *
+ * Wraps any subtree to catch rendering errors before they propagate
+ * to the root and crash the entire application. Renders a recoverable
+ * inline error card with a "Try Again" reset button.
+ */
+
+/**
+ * React class-based Error Boundary that catches rendering errors within its subtree.
+ * Must be a class component — React hooks cannot implement componentDidCatch.
+ *
+ * USAGE: Wrap any feature section that should fail gracefully in isolation:
+ * ```jsx
+ * <ScopedErrorBoundary>
+ *   <MyFeatureComponent />
+ * </ScopedErrorBoundary>
+ * ```
  */
 export class ScopedErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
+    /** @type {{ hasError: boolean, error: Error|null }} */
     this.state = { hasError: false, error: null };
   }
 
+  /**
+   * Updates state to trigger the error UI on next render.
+   * Called during the render phase — must be a pure static method.
+   *
+   * @param {Error} error - The error that was thrown
+   * @returns {{ hasError: boolean, error: Error }} New state slice
+   */
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
 
+  /**
+   * Lifecycle method called after a rendering error is caught.
+   * Suitable for logging errors to an external monitoring service (Sentry, Datadog, etc.).
+   * Runs after the render phase so side-effects (like logging) are safe here.
+   *
+   * @param {Error} error - The error that was thrown
+   * @param {React.ErrorInfo} errorInfo - Component stack trace information
+   * @returns {void}
+   */
   componentDidCatch(error, errorInfo) {
-    // In a real app, send to Sentry/Datadog here
-    console.error('ScopedErrorBoundary caught an error:', error, errorInfo);
+    // Production: replace with Sentry.captureException(error, { extra: errorInfo })
+    if (import.meta.env.DEV) {
+      // Log only in development to aid debugging — never in production
+      // eslint-disable-next-line no-console
+      console.error('ScopedErrorBoundary caught an error:', error, errorInfo);
+    }
   }
 
   render() {
@@ -41,3 +79,8 @@ export class ScopedErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+ScopedErrorBoundary.propTypes = {
+  /** The component subtree to protect from rendering errors */
+  children: PropTypes.node.isRequired,
+};

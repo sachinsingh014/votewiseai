@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate, Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -31,6 +32,32 @@ function Field({ id, label, type = 'text', value, onChange, error, placeholder, 
     </div>
   );
 }
+
+Field.propTypes = {
+  /** Unique HTML id used for label/input association and error aria-describedby */
+  id: PropTypes.string.isRequired,
+  /** Visible label text displayed above the input */
+  label: PropTypes.string.isRequired,
+  /** HTML input type (text, email, password, etc.) */
+  type: PropTypes.string,
+  /** Controlled input value */
+  value: PropTypes.string.isRequired,
+  /** Callback receiving the new string value on every keystroke */
+  onChange: PropTypes.func.isRequired,
+  /** Validation error message string; if truthy, renders error state */
+  error: PropTypes.string,
+  /** Placeholder text shown when the input is empty */
+  placeholder: PropTypes.string,
+  /** HTML autocomplete attribute value for browser autofill */
+  autoComplete: PropTypes.string,
+};
+
+Field.defaultProps = {
+  type: 'text',
+  error: '',
+  placeholder: '',
+  autoComplete: 'off',
+};
 
 /* ── Firebase error → human readable string ── */
 function parseFirebaseError(code) {

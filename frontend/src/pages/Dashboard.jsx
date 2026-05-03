@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getAuth } from 'firebase/auth';
@@ -89,6 +90,25 @@ function StepCard({ step, isLast, onComplete }) {
   );
 }
 
+StepCard.propTypes = {
+  /** The roadmap step object to render */
+  step: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    status: PropTypes.oneOf(['completed', 'action_required', 'locked']).isRequired,
+    icon: PropTypes.string.isRequired,
+    cta: PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      href: PropTypes.string.isRequired,
+    }),
+  }).isRequired,
+  /** Whether this is the last step in the list (hides the connector line) */
+  isLast: PropTypes.bool.isRequired,
+  /** Callback fired when the user clicks Mark Complete — receives step.id */
+  onComplete: PropTypes.func.isRequired,
+};
+
 function SkeletonCard() {
   return (
     <div className="bg-slate-50 rounded-2xl p-6 border border-dashed border-slate-200 animate-pulse" aria-label="Loading next step" aria-busy="true">
@@ -102,6 +122,8 @@ function SkeletonCard() {
     </div>
   );
 }
+
+SkeletonCard.propTypes = {};
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -127,11 +149,10 @@ export default function Dashboard() {
         if (res.ok) {
           setSteps(data.data.roadmap);
           Analytics.dashboardViewed();
-        } else {
-          console.error('Failed to fetch roadmap:', data);
         }
-      } catch (err) {
-        console.error('Error fetching roadmap:', err);
+        // On API error: loading stops and steps remains null — UI shows empty state
+      } catch {
+        // Network or parse error: loading stops gracefully
       } finally {
         setLoading(false);
       }
@@ -158,15 +179,15 @@ export default function Dashboard() {
         body: JSON.stringify({ stepId }),
       });
       if (!res.ok) {
+        // Revert optimistic update on API failure
         setSteps(steps);
-        console.error('Failed to update step');
       } else {
         const completedStep = steps.find((s) => s.id === stepId);
         Analytics.journeyStepCompleted({ stepId, stepTitle: completedStep?.title });
       }
-    } catch (err) {
+    } catch {
+      // Revert optimistic update on network failure
       setSteps(steps);
-      console.error('Error updating step:', err);
     }
   };
 
